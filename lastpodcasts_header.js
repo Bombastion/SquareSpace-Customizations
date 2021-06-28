@@ -122,7 +122,7 @@
       
       // Some posts just have this encoded properly
       anchors = anchors.concat(encodedObjects.find("a").get().reverse())
-      hostName = "www.crunchyroll.com";
+      hostName = "crunchyroll.com";
       url = extractMediaLink(anchors, hostName);
       
       if(!(url.trim() === ''))
