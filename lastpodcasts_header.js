@@ -11,6 +11,8 @@
   // Used for the archive pages. Declaring as global variables so they can be populated for later use
   var mediaBlocks;
   var mostRecentBlock;
+  var additionalMedia;
+
   pageDivIdDict = {};
   ARCHIVE_FIRST_PAGE_HOLDER_DIV_ID = "first-page-special-div";
   ARCHIVE_FIRST_PAGE_LINKS_DIV = "first-page-special-links-div";
@@ -354,6 +356,7 @@
       mainBody = mainBody.children().children();
       
       // Load the RSS feed and loop through the info
+      earliestTime = 0;
       jQuery.ajax({
           type: "get",
           url: `${NEWS_AND_TAG_URL}${showInfo.tagHtmlFormat}&format=rss`,
@@ -362,10 +365,36 @@
           success: function(data) {
             // Find the latest post with a media block and grab its media and title
             mediaBlocks = jQuery(data).find("media\\:content");
+            earliestTimeCandidate = Date.parse(jQuery(data).find("pubDate").last().html());            
             
             // Grab the first (and most recent) element, remove it from the list
             mostRecentBlock = jQuery(mediaBlocks.first());
             mediaBlocks = mediaBlocks.slice(1, mediaBlocks.length);
+            
+            while(earliestTimeCandidate != earliestTime) 
+            {
+                console.log(earliestTime + ", " + earliestTimeCandidate);
+                earliestTime = earliestTimeCandidate;
+                console.log(earliestTime);
+                jQuery.ajax({
+                    type: "get",
+                    url: `${NEWS_AND_TAG_URL}${showInfo.tagHtmlFormat}&format=rss&offset=${earliestTime}`,
+                    dataType: "xml",
+                    async: false,
+                    success: function(additionalData) {
+                      additionalMedia = jQuery(additionalData).find("media\\:content");
+                      if (additionalMedia.length > 0) 
+                      {
+                      mediaBlocks = jQuery.merge(mediaBlocks, additionalMedia);
+                      earliestTimeCandidate = Date.parse(jQuery(additionalData).find("pubDate").last().html());
+                      }
+                    }
+                });
+              if (additionalMedia.length <= 0)
+              {
+                break;
+              }
+            }  
             
             // Order the media appropriately for each show
             // TODO: Allow for custom sort (ascending/descending)
